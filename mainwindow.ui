@@ -128,12 +128,17 @@
             </item>
             <item>
              <property name="text">
-              <string>工资</string>
+              <string>水电</string>
              </property>
             </item>
             <item>
              <property name="text">
-              <string>水电</string>
+              <string>娱乐</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>工资</string>
              </property>
             </item>
            </widget>
@@ -225,11 +230,11 @@
         <string>统计图表</string>
        </attribute>
        <layout class="QGridLayout" name="gridLayout_Charts">
-        <item row="0" column="0">
-         <widget class="QChartView" name="chartView_Pie"/>
-        </item>
         <item row="0" column="1">
          <widget class="QChartView" name="chartView_Bar"/>
+        </item>
+        <item row="0" column="0">
+         <widget class="QChartView" name="chartView_Pie"/>
         </item>
        </layout>
       </widget>
@@ -250,6 +255,7 @@
     <property name="title">
      <string>文件(&amp;F)</string>
     </property>
+    <addaction name="actionAddRecord"/>
     <addaction name="actionExport"/>
     <addaction name="separator"/>
     <addaction name="actionExit"/>
