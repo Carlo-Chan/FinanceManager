@@ -2,6 +2,8 @@
 #include "ui_mainwindow.h"
 #include <QChart>
 #include <QChartView>
+#include "aboutdialog.h"
+#include "addrecorddialog.h"
 
 QT_BEGIN_NAMESPACE
 class QChartView;
@@ -40,7 +42,8 @@ void MainWindow::on_actionExit_triggered()
 
 void MainWindow::on_actionAbout_triggered()
 {
-
+    AboutDialog dlg;
+    dlg.exec();
 }
 
 

@@ -326,10 +326,13 @@
      <normaloff>:/img/add.svg</normaloff>:/img/add.svg</iconset>
    </property>
    <property name="text">
-    <string>记一笔</string>
+    <string>记一笔(&amp;N)</string>
    </property>
    <property name="toolTip">
     <string>添加新的账单记录</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+N</string>
    </property>
   </action>
   <action name="actionExport">
@@ -338,10 +341,13 @@
      <normaloff>:/img/export_notes.svg</normaloff>:/img/export_notes.svg</iconset>
    </property>
    <property name="text">
-    <string>导出Excel</string>
+    <string>导出Excel(&amp;E)</string>
    </property>
    <property name="toolTip">
     <string>将数据导出为CSV文件</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+E</string>
    </property>
   </action>
   <action name="actionExit">
@@ -350,7 +356,7 @@
      <normaloff>:/img/close.svg</normaloff>:/img/close.svg</iconset>
    </property>
    <property name="text">
-    <string>退出</string>
+    <string>退出(&amp;X)</string>
    </property>
    <property name="menuRole">
     <enum>QAction::MenuRole::QuitRole</enum>
@@ -362,7 +368,7 @@
      <normaloff>:/img/info.svg</normaloff>:/img/info.svg</iconset>
    </property>
    <property name="text">
-    <string>关于</string>
+    <string>关于(&amp;A)</string>
    </property>
    <property name="menuRole">
     <enum>QAction::MenuRole::AboutRole</enum>
