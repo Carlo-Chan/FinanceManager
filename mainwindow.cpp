@@ -19,3 +19,45 @@ MainWindow::~MainWindow()
 {
     delete ui;
 }
+
+void MainWindow::on_actionAddRecord_triggered()
+{
+
+}
+
+
+void MainWindow::on_actionExport_triggered()
+{
+
+}
+
+
+void MainWindow::on_actionExit_triggered()
+{
+
+}
+
+
+void MainWindow::on_actionAbout_triggered()
+{
+
+}
+
+
+void MainWindow::on_btn_Filter_clicked()
+{
+
+}
+
+
+void MainWindow::on_btn_Reset_clicked()
+{
+
+}
+
+
+void MainWindow::on_btn_Delete_clicked()
+{
+
+}
+
