@@ -1,0 +1,14 @@
+<RCC>
+    <qresource prefix="/">
+        <file>img/add.svg</file>
+        <file>img/bar_chart.png</file>
+        <file>img/bar_chart.svg</file>
+        <file>img/delete.svg</file>
+        <file>img/export_notes.svg</file>
+        <file>img/replay.svg</file>
+        <file>img/search.svg</file>
+        <file>img/close.svg</file>
+        <file>img/logout.svg</file>
+        <file>img/info.svg</file>
+    </qresource>
+</RCC>
