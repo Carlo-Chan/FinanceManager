@@ -91,7 +91,33 @@ void MainWindow::on_actionAbout_triggered()
 
 void MainWindow::on_btn_Filter_clicked()
 {
+    QString filterStr = "1=1"; // 初始条件
 
+    // 日期筛选
+    qint64 startSec = QDateTime(ui->dateEdit_Start->date(), QTime(0,0)).toSecsSinceEpoch();
+    qint64 endSec = QDateTime(ui->dateEdit_End->date(), QTime(23,59,59)).toSecsSinceEpoch();
+    filterStr += QString(" AND timestamp >= %1 AND timestamp <= %2").arg(startSec).arg(endSec);
+
+    // 类型筛选 (如果是 -1 则全部)
+    int type = ui->comboBox_FilterType->currentData().toInt();
+    if (type != -1) {
+        filterStr += QString(" AND cid IN (SELECT id FROM category WHERE type = %1)").arg(type);
+    }
+
+    // 分类筛选
+    int categoryId = ui->comboBox_FilterCategory->currentData().toInt();
+    if (categoryId != -1) {
+        filterStr += QString(" AND cid = %1").arg(categoryId);
+    }
+
+    // 备注搜索 (模糊查询)
+    QString note = ui->lineEdit_Search->text().trimmed();
+    if (!note.isEmpty()) {
+        filterStr += QString(" AND note LIKE '%%1%'").arg(note);
+    }
+
+    model->setFilter(filterStr);
+    model->select();
 }
 
 
