@@ -26,6 +26,15 @@ MainWindow::MainWindow(QWidget *parent)
     // 初始化模块
     initModelView();
 
+    // 初始化筛选控件
+    ui->dateEdit_Start->setDate(QDate::currentDate().addMonths(-1)); // 默认查最近一个月
+    ui->dateEdit_End->setDate(QDate::currentDate());
+
+    // 初始化筛选类型 ComboBox
+    ui->comboBox_FilterType->clear();
+    ui->comboBox_FilterType->addItem("全部", -1);
+    ui->comboBox_FilterType->addItem("支出", 0);
+    ui->comboBox_FilterType->addItem("收入", 1);
 }
 
 MainWindow::~MainWindow()
@@ -81,7 +90,13 @@ void MainWindow::on_btn_Filter_clicked()
 
 void MainWindow::on_btn_Reset_clicked()
 {
+    ui->dateEdit_Start->setDate(QDate::currentDate().addMonths(-1));
+    ui->dateEdit_End->setDate(QDate::currentDate());
+    ui->comboBox_FilterType->setCurrentIndex(0); // 全部
+    ui->lineEdit_Search->clear();
 
+    model->setFilter("");
+    model->select();
 }
 
 
