@@ -11,12 +11,14 @@ CONFIG += c++17
 SOURCES += \
     aboutdialog.cpp \
     addrecorddialog.cpp \
+    databasemanager.cpp \
     main.cpp \
     mainwindow.cpp
 
 HEADERS += \
     aboutdialog.h \
     addrecorddialog.h \
+    databasemanager.h \
     mainwindow.h
 
 FORMS += \

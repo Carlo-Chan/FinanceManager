@@ -2,6 +2,8 @@
 #define MAINWINDOW_H
 
 #include <QMainWindow>
+#include <QSqlRelationalTableModel>
+#include <QtCharts>
 
 QT_BEGIN_NAMESPACE
 namespace Ui {

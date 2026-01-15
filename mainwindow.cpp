@@ -1,20 +1,20 @@
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
-#include <QChart>
-#include <QChartView>
 #include "aboutdialog.h"
 #include "addrecorddialog.h"
-
-QT_BEGIN_NAMESPACE
-class QChartView;
-class QChart;
-QT_END_NAMESPACE
+#include "databasemanager.h"
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
     , ui(new Ui::MainWindow)
 {
     ui->setupUi(this);
+
+    // 连接数据库
+    if (!DatabaseManager::instance().openDatabase("F:/Users/22783/Documents/Qt/FinanceManager/finance.db")) {
+        QMessageBox::critical(this, "错误", "无法连接数据库！");
+    }
+
 }
 
 MainWindow::~MainWindow()
