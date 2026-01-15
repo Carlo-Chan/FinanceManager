@@ -102,7 +102,21 @@ void MainWindow::on_btn_Reset_clicked()
 
 void MainWindow::on_btn_Delete_clicked()
 {
+    QModelIndexList selection = ui->tableView->selectionModel()->selectedRows();
+    if (selection.isEmpty()) {
+        QMessageBox::warning(this, "提示", "请先选择要删除的行");
+        return;
+    }
 
+    int ret = QMessageBox::question(this, "确认", "确定要删除选中的记录吗？", QMessageBox::Yes | QMessageBox::No);
+    if (ret == QMessageBox::Yes) {
+        // 从最后一行开始删，防止索引变化
+        for(int i = selection.count() - 1; i >= 0; i--) {
+            model->removeRow(selection.at(i).row());
+        }
+        model->submitAll(); // 提交到数据库
+        model->select();
+    }
 }
 
 // 时间戳转换代理 (TimeDelegate)
