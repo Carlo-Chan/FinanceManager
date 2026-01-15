@@ -271,7 +271,8 @@ void MainWindow::updateCharts()
     QString sql = "SELECT c.name, SUM(r.amount) FROM record r "
                   "JOIN category c ON r.cid = c.id "
                   "WHERE r.timestamp >= ? AND r.timestamp <= ? "
-                  "GROUP BY c.name";
+                  "GROUP BY c.name "
+                  "ORDER BY SUM(r.amount) DESC";
     query.prepare(sql);
     query.addBindValue(startSec);
     query.addBindValue(endSec);
@@ -280,20 +281,54 @@ void MainWindow::updateCharts()
         while(query.next()) {
             QString name = query.value(0).toString();
             double value = query.value(1).toDouble();
-            pieSeries->append(name, value);
+            if(value > 0) { // 只添加金额大于0的
+                pieSeries->append(name, value);
+            }
         }
     }
 
     // 设置饼图标签可见
     for(auto slice : pieSeries->slices()) {
-        slice->setLabelVisible(true);
+        // 获取该切片的百分比 (0.0 ~ 1.0)
+        double percent = slice->percentage();
+
+        // 设置标签格式
+        QString label = QString("%1: %2%").arg(slice->label()).arg(QString::number(percent * 100, 'f', 1));
+        slice->setLabel(label);
+
+        // 只有占比大于 3% 的才默认显示标签，防止重叠
+        if (percent < 0.03) {
+            slice->setLabelVisible(false);
+        } else {
+            slice->setLabelVisible(true);
+            slice->setLabelPosition(QPieSlice::LabelOutside); // 标签放外面
+        }
+
+        // 添加鼠标悬停交互 (Hover)
+        // 当鼠标滑过任何切片（包括那些隐藏标签的小切片）时，突出显示并强制展示标签
+        connect(slice, &QPieSlice::hovered, this, [slice, percent](bool state){
+            // 鼠标移入(state=true)时炸开(Exploded)，移出复原
+            slice->setExploded(state);
+
+            // 鼠标移入时强制显示标签，移出时恢复默认逻辑(大于3%才显)
+            if (state) {
+                slice->setLabelVisible(true);
+            } else {
+                slice->setLabelVisible(percent >= 0.03);
+            }
+        });
     }
+
+    // 设置图例 (Legend)
+    // 对于隐藏了标签的小切片，用户可以通过右侧图例看颜色对应
+    pieChart->legend()->setVisible(true);
+    pieChart->legend()->setAlignment(Qt::AlignRight); // 图例放右边
     pieChart->addSeries(pieSeries);
 
 
     // 更新柱状图 (按收支类型汇总)
     barChart->removeAllSeries();
-    // 清除旧坐标轴
+    // 清除旧坐标轴 (防止多次刷新后坐标轴残留)
     QList<QAbstractAxis*> axes = barChart->axes();
     for(auto axis : axes) barChart->removeAxis(axis);
 
@@ -322,11 +357,16 @@ void MainWindow::updateCharts()
     *setIncome << totalIncome;
     *setExpense << totalExpense;
 
-    setIncome->setColor(Qt::green);
-    setExpense->setColor(Qt::red);
+    // 设置颜色
+    setIncome->setColor(QColor(60, 179, 113)); // MediumSeaGreen
+    setExpense->setColor(QColor(220, 20, 60)); // Crimson
 
     barSeries->append(setIncome);
     barSeries->append(setExpense);
+
+    // 显示数值标签 (在柱子上显示数字)
+    barSeries->setLabelsVisible(true);
+
     barChart->addSeries(barSeries);
 
     // 创建坐标轴
@@ -338,6 +378,12 @@ void MainWindow::updateCharts()
 
     QValueAxis *axisY = new QValueAxis();
     barChart->addAxis(axisY, Qt::AlignLeft);
+    // 让Y轴稍微高一点，避免柱子顶到头
+    double maxVal = qMax(totalIncome, totalExpense);
+    axisY->setRange(0, maxVal * 1.2);
+    // 设置Y轴标签格式 (不显示小数)
+    axisY->setLabelFormat("%.0f");
+
     barSeries->attachAxis(axisY);
 }
 
