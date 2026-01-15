@@ -77,7 +77,33 @@ void MainWindow::on_actionAddRecord_triggered()
 
 void MainWindow::on_actionExport_triggered()
 {
+    QString fileName = QFileDialog::getSaveFileName(this, "导出数据", "", "CSV Files (*.csv)");
+    if (fileName.isEmpty()) return;
 
+    QFile file(fileName);
+    if (file.open(QIODevice::WriteOnly | QIODevice::Text)) {
+        QTextStream out(&file);
+        // 写入 BOM 以解决 Excel 中文乱码
+        out << QString::fromUtf8("\xEF\xBB\xBF");
+
+        // 写表头
+        out << "ID,金额,时间,备注,分类\n";
+
+        // 写数据 (遍历 Model)
+        for(int i = 0; i < model->rowCount(); ++i) {
+            QString id = model->record(i).value("id").toString();
+            QString amount = model->record(i).value("amount").toString();
+            // 简单处理时间戳
+            qint64 ts = model->record(i).value("timestamp").toLongLong();
+            QString time = QDateTime::fromSecsSinceEpoch(ts).toString("yyyy-MM-dd HH:mm");
+            QString note = model->record(i).value("note").toString();
+            QString category = model->record(i).value("name").toString(); // 关联后的名字
+
+            out << id << "," << amount << "," << time << "," << note << "," << category << "\n";
+        }
+        file.close();
+        QMessageBox::information(this, "成功", "导出成功！");
+    }
 }
 
 
