@@ -309,6 +309,12 @@ void MainWindow::initModelView()
     // 备注：自动拉伸 (Stretch)，填满剩余空间
     header->setSectionResizeMode(3, QHeaderView::Stretch);
 
+    // 让表格里所有的输入框、下拉框背景都变白，以防单元格编辑时输入框背景透明导致文字重叠
+    ui->tableView->setStyleSheet(
+        "QTableView QLineEdit { background-color: white; color: black; }"
+        "QTableView QComboBox { background-color: white; color: black; }"
+        );
+
     // 当表格数据发生变化（用户编辑）时，重新画图
     connect(model, &QSqlTableModel::dataChanged, this, [this](){
         updateCharts();
