@@ -41,8 +41,14 @@ private:
 
     QSqlRelationalTableModel *model; // 关系型表格模型
 
+    // 图表对象
+    QChart *barChart;
+    QChart *pieChart;
+
     // 初始化函数
     void initModelView();
+    void initCharts();
+    void updateCharts(); // 刷新图表数据
 
     // 辅助函数：加载主界面的筛选分类
     void loadFilterCategories(int type); // type: 0支出, 1收入, -1全部

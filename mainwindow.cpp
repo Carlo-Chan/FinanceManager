@@ -23,8 +23,9 @@ MainWindow::MainWindow(QWidget *parent)
         QMessageBox::critical(this, "错误", "无法连接数据库！");
     }
 
-    // 初始化模块
+    // 初始化各个模块
     initModelView();
+    initCharts();
 
     // 初始化筛选控件
     ui->dateEdit_Start->setDate(QDate::currentDate().addMonths(-1)); // 默认查最近一个月
@@ -228,6 +229,28 @@ void MainWindow::initModelView()
 
     // 备注：自动拉伸 (Stretch)，填满剩余空间
     header->setSectionResizeMode(3, QHeaderView::Stretch);
+}
+
+void MainWindow::initCharts()
+{
+    // 初始化柱状图
+    barChart = new QChart();
+    barChart->setTitle("收支趋势");
+    barChart->setAnimationOptions(QChart::SeriesAnimations);
+    ui->chartView_Bar->setChart(barChart);
+    ui->chartView_Bar->setRenderHint(QPainter::Antialiasing);
+
+    // 初始化饼图
+    pieChart = new QChart();
+    pieChart->setTitle("收支构成");
+    pieChart->setAnimationOptions(QChart::SeriesAnimations);
+    ui->chartView_Pie->setChart(pieChart);
+    ui->chartView_Pie->setRenderHint(QPainter::Antialiasing);
+}
+
+void MainWindow::updateCharts()
+{
+
 }
 
 void MainWindow::loadFilterCategories(int type)
