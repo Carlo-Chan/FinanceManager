@@ -62,7 +62,7 @@ void MainWindow::on_actionExport_triggered()
 
 void MainWindow::on_actionExit_triggered()
 {
-
+    close();
 }
 
 
