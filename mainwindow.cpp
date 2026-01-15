@@ -35,7 +35,22 @@ MainWindow::~MainWindow()
 
 void MainWindow::on_actionAddRecord_triggered()
 {
+    AddRecordDialog dlg(this);
+    if (dlg.exec() == QDialog::Accepted) {
+        auto data = dlg.getRecordData();
 
+        // 插入数据库
+        bool success = DatabaseManager::instance().insertRecord(
+            data.amount, data.date, data.note, data.categoryId
+            );
+
+        if (success) {
+            model->select(); // 刷新表格
+            QMessageBox::information(this, "成功", "账单添加成功！");
+        } else {
+            QMessageBox::warning(this, "失败", "添加失败，请检查数据库。");
+        }
+    }
 }
 
 
