@@ -3,6 +3,7 @@
 #include "aboutdialog.h"
 #include "addrecorddialog.h"
 #include "databasemanager.h"
+#include "categorydialog.h"
 
 #include <QMessageBox>
 #include <QSqlRecord>
@@ -477,5 +478,21 @@ void MainWindow::loadFilterCategories(int type)
     while (query.next()) {
         ui->comboBox_FilterCategory->addItem(query.value("name").toString(), query.value("id").toInt());
     }
+}
+
+
+void MainWindow::on_actionManageCategory_triggered()
+{
+    CategoryDialog dlg(this);
+    dlg.exec(); // 模态显示
+
+    // 当窗口关闭后，主界面可能需要刷新
+    // 刷新主界面的筛选下拉框（分类可能变了）
+    int currentType = ui->comboBox_FilterType->currentData().toInt();
+    loadFilterCategories(currentType);
+
+    // 刷新表格（如果用户删除了分类，表格里的记录会变化）
+    model->select();
+    updateCharts();
 }
 

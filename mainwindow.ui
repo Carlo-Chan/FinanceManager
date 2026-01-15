@@ -60,9 +60,9 @@
               <hour>0</hour>
               <minute>0</minute>
               <second>0</second>
-              <year>2000</year>
-              <month>1</month>
-              <day>1</day>
+              <year>1999</year>
+              <month>12</month>
+              <day>31</day>
              </datetime>
             </property>
             <property name="displayFormat">
@@ -87,9 +87,9 @@
               <hour>0</hour>
               <minute>0</minute>
               <second>0</second>
-              <year>2026</year>
-              <month>1</month>
-              <day>1</day>
+              <year>2025</year>
+              <month>12</month>
+              <day>31</day>
              </datetime>
             </property>
             <property name="displayFormat">
@@ -291,7 +291,6 @@
     <property name="title">
      <string>文件(&amp;F)</string>
     </property>
-    <addaction name="actionAddRecord"/>
     <addaction name="actionExport"/>
     <addaction name="separator"/>
     <addaction name="actionExit"/>
@@ -302,7 +301,21 @@
     </property>
     <addaction name="actionAbout"/>
    </widget>
+   <widget class="QMenu" name="menu_S">
+    <property name="title">
+     <string>设置(&amp;S)</string>
+    </property>
+    <addaction name="actionManageCategory"/>
+   </widget>
+   <widget class="QMenu" name="menu_E">
+    <property name="title">
+     <string>编辑(&amp;E)</string>
+    </property>
+    <addaction name="actionAddRecord"/>
+   </widget>
    <addaction name="menuFile"/>
+   <addaction name="menu_E"/>
+   <addaction name="menu_S"/>
    <addaction name="menu"/>
   </widget>
   <widget class="QToolBar" name="mainToolBar">
@@ -316,6 +329,9 @@
     <bool>false</bool>
    </attribute>
    <addaction name="actionAddRecord"/>
+   <addaction name="separator"/>
+   <addaction name="actionManageCategory"/>
+   <addaction name="separator"/>
    <addaction name="actionExport"/>
    <addaction name="separator"/>
    <addaction name="actionAbout"/>
@@ -326,7 +342,7 @@
      <normaloff>:/img/add.svg</normaloff>:/img/add.svg</iconset>
    </property>
    <property name="text">
-    <string>记一笔(&amp;N)</string>
+    <string>新增账单(&amp;N)</string>
    </property>
    <property name="toolTip">
     <string>添加新的账单记录</string>
@@ -372,6 +388,21 @@
    </property>
    <property name="menuRole">
     <enum>QAction::MenuRole::AboutRole</enum>
+   </property>
+  </action>
+  <action name="actionManageCategory">
+   <property name="icon">
+    <iconset resource="img.qrc">
+     <normaloff>:/img/style.svg</normaloff>:/img/style.svg</iconset>
+   </property>
+   <property name="text">
+    <string>分类管理(&amp;C)</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+Shift+C</string>
+   </property>
+   <property name="menuRole">
+    <enum>QAction::MenuRole::NoRole</enum>
    </property>
   </action>
  </widget>

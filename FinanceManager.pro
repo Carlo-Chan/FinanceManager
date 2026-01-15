@@ -11,6 +11,7 @@ CONFIG += c++17
 SOURCES += \
     aboutdialog.cpp \
     addrecorddialog.cpp \
+    categorydialog.cpp \
     databasemanager.cpp \
     main.cpp \
     mainwindow.cpp
@@ -18,12 +19,14 @@ SOURCES += \
 HEADERS += \
     aboutdialog.h \
     addrecorddialog.h \
+    categorydialog.h \
     databasemanager.h \
     mainwindow.h
 
 FORMS += \
     aboutdialog.ui \
     addrecorddialog.ui \
+    categorydialog.ui \
     mainwindow.ui
 
 # Default rules for deployment.

@@ -36,6 +36,8 @@ private slots:
 
     void on_filterTypeChanged(int index);
 
+    void on_actionManageCategory_triggered();
+
 private:
     Ui::MainWindow *ui;
 
