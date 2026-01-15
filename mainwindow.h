@@ -36,5 +36,10 @@ private slots:
 
 private:
     Ui::MainWindow *ui;
+
+    QSqlRelationalTableModel *model; // 关系型表格模型
+
+    // 初始化函数
+    void initModelView();
 };
 #endif // MAINWINDOW_H
