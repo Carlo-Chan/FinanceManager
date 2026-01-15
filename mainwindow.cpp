@@ -35,6 +35,13 @@ MainWindow::MainWindow(QWidget *parent)
     ui->comboBox_FilterType->addItem("全部", -1);
     ui->comboBox_FilterType->addItem("支出", 0);
     ui->comboBox_FilterType->addItem("收入", 1);
+
+    // 联动连接：当筛选类型改变时，更新筛选分类
+    connect(ui->comboBox_FilterType, SIGNAL(currentIndexChanged(int)),
+            this, SLOT(on_filterTypeChanged(int)));
+
+    // 初始加载所有分类
+    loadFilterCategories(-1);
 }
 
 MainWindow::~MainWindow()
@@ -119,6 +126,12 @@ void MainWindow::on_btn_Delete_clicked()
     }
 }
 
+void MainWindow::on_filterTypeChanged(int index)
+{
+    int type = ui->comboBox_FilterType->currentData().toInt();
+    loadFilterCategories(type); // 重新加载分类
+}
+
 // 时间戳转换代理 (TimeDelegate)
 // 作用：将数据库里的 Unix 时间戳 (秒) 转换为 "yyyy-MM-dd HH:mm" 格式显示
 class TimeDelegate : public QStyledItemDelegate {
@@ -189,5 +202,16 @@ void MainWindow::initModelView()
 
     // 备注：自动拉伸 (Stretch)，填满剩余空间
     header->setSectionResizeMode(3, QHeaderView::Stretch);
+}
+
+void MainWindow::loadFilterCategories(int type)
+{
+    ui->comboBox_FilterCategory->clear();
+    ui->comboBox_FilterCategory->addItem("全部", -1); // 默认项
+
+    QSqlQuery query = DatabaseManager::instance().getCategories(type);
+    while (query.next()) {
+        ui->comboBox_FilterCategory->addItem(query.value("name").toString(), query.value("id").toInt());
+    }
 }
 

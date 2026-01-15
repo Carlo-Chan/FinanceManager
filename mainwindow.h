@@ -34,6 +34,8 @@ private slots:
 
     void on_btn_Delete_clicked();
 
+    void on_filterTypeChanged(int index);
+
 private:
     Ui::MainWindow *ui;
 
@@ -41,5 +43,8 @@ private:
 
     // 初始化函数
     void initModelView();
+
+    // 辅助函数：加载主界面的筛选分类
+    void loadFilterCategories(int type); // type: 0支出, 1收入, -1全部
 };
 #endif // MAINWINDOW_H
