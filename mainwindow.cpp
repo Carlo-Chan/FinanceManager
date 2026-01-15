@@ -61,7 +61,7 @@ void MainWindow::on_actionAddRecord_triggered()
 
         // 插入数据库
         bool success = DatabaseManager::instance().insertRecord(
-            data.amount, data.date, data.note, data.categoryId
+            data.amount, data.dateTime, data.note, data.categoryId
             );
 
         if (success) {

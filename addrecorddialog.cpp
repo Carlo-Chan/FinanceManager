@@ -17,7 +17,7 @@ AddRecordDialog::AddRecordDialog(QWidget *parent)
     ui->combo_Type->addItem("收入", 1);
 
     // 设置日期默认为今天
-    ui->dateEdit->setDate(QDate::currentDate());
+    ui->dateTimeEdit->setDateTime(QDateTime::currentDateTime());
 
     // 触发一次分类加载（默认加载支出的分类）
     loadCategories(0);
@@ -54,7 +54,7 @@ AddRecordDialog::RecordData AddRecordDialog::getRecordData() const
 {
     RecordData data;
     data.amount = ui->lineEdit_Amount->text().toDouble();
-    data.date = ui->dateEdit->date();
+    data.dateTime = ui->dateTimeEdit->dateTime();
     data.note = ui->textEdit_Note->toPlainText();
     // 获取选中的分类ID
     data.categoryId = ui->combo_Category->currentData().toInt();

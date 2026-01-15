@@ -61,26 +61,6 @@
        </property>
       </widget>
      </item>
-     <item row="2" column="1">
-      <widget class="QDateEdit" name="dateEdit">
-       <property name="dateTime">
-        <datetime>
-         <hour>16</hour>
-         <minute>0</minute>
-         <second>0</second>
-         <year>2026</year>
-         <month>1</month>
-         <day>3</day>
-        </datetime>
-       </property>
-       <property name="displayFormat">
-        <string>yyyy-MM-dd</string>
-       </property>
-       <property name="calendarPopup">
-        <bool>true</bool>
-       </property>
-      </widget>
-     </item>
      <item row="3" column="0">
       <widget class="QLabel" name="label_Category">
        <property name="text">
@@ -134,6 +114,26 @@
          <width>16777215</width>
          <height>60</height>
         </size>
+       </property>
+      </widget>
+     </item>
+     <item row="2" column="1">
+      <widget class="QDateTimeEdit" name="dateTimeEdit">
+       <property name="dateTime">
+        <datetime>
+         <hour>0</hour>
+         <minute>0</minute>
+         <second>0</second>
+         <year>2026</year>
+         <month>1</month>
+         <day>3</day>
+        </datetime>
+       </property>
+       <property name="currentSection">
+        <enum>QDateTimeEdit::Section::YearSection</enum>
+       </property>
+       <property name="calendarPopup">
+        <bool>true</bool>
        </property>
       </widget>
      </item>

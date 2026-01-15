@@ -21,7 +21,7 @@ public:
     void initTables();
 
     // 封装一些常用的业务操作
-    bool insertRecord(double amount, const QDate& date, const QString& note, int cid);
+    bool insertRecord(double amount, const QDateTime& datetime, const QString& note, int cid);
     QSqlQuery getCategories(int type); // 获取分类列表
 
 private:

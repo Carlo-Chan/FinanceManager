@@ -2,7 +2,7 @@
 #define ADDRECORDDIALOG_H
 
 #include <QDialog>
-#include <QDate>
+#include <QDateTime>
 
 namespace Ui {
 class AddRecordDialog;
@@ -19,7 +19,7 @@ public:
     // 定义结构体方便传递数据
     struct RecordData {
         double amount;
-        QDate date;
+        QDateTime dateTime;
         QString note;
         int categoryId;
     };

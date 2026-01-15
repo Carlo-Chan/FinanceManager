@@ -81,7 +81,7 @@ void DatabaseManager::initTables()
 }
 
 // 封装插入操作
-bool DatabaseManager::insertRecord(double amount, const QDate& date, const QString& note, int cid)
+bool DatabaseManager::insertRecord(double amount, const QDateTime& datetime, const QString& note, int cid)
 {
     QSqlQuery query;
     query.prepare("INSERT INTO record (amount, timestamp, note, cid) "
@@ -89,7 +89,7 @@ bool DatabaseManager::insertRecord(double amount, const QDate& date, const QStri
 
     query.bindValue(":amount", amount);
     // 统一处理日期转时间戳，存储为 Unix 时间戳 (秒)
-    query.bindValue(":time", QDateTime(date, QTime(0,0)).toSecsSinceEpoch());
+    query.bindValue(":time", datetime.toSecsSinceEpoch());
     query.bindValue(":note", note);
     query.bindValue(":cid", cid);
 
