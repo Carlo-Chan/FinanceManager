@@ -43,6 +43,9 @@ MainWindow::MainWindow(QWidget *parent)
 
     // 初始加载所有分类
     loadFilterCategories(-1);
+
+    // 初始刷新图表
+    updateCharts();
 }
 
 MainWindow::~MainWindow()
@@ -63,6 +66,7 @@ void MainWindow::on_actionAddRecord_triggered()
 
         if (success) {
             model->select(); // 刷新表格
+            updateCharts();  // 刷新图表
             QMessageBox::information(this, "成功", "账单添加成功！");
         } else {
             QMessageBox::warning(this, "失败", "添加失败，请检查数据库。");
@@ -119,6 +123,9 @@ void MainWindow::on_btn_Filter_clicked()
 
     model->setFilter(filterStr);
     model->select();
+
+    // 刷新图表，让图表也反映筛选后的时间段
+    updateCharts();
 }
 
 
@@ -131,6 +138,7 @@ void MainWindow::on_btn_Reset_clicked()
 
     model->setFilter("");
     model->select();
+    updateCharts();
 }
 
 
@@ -150,6 +158,7 @@ void MainWindow::on_btn_Delete_clicked()
         }
         model->submitAll(); // 提交到数据库
         model->select();
+        updateCharts();
     }
 }
 
@@ -250,7 +259,86 @@ void MainWindow::initCharts()
 
 void MainWindow::updateCharts()
 {
+    // 更新饼图 (按分类汇总金额)
+    pieChart->removeAllSeries();
+    QPieSeries *pieSeries = new QPieSeries();
 
+    // 查询：根据当前日期范围汇总 (可复用筛选的时间)
+    qint64 startSec = QDateTime(ui->dateEdit_Start->date(), QTime(0,0)).toSecsSinceEpoch();
+    qint64 endSec = QDateTime(ui->dateEdit_End->date(), QTime(23,59,59)).toSecsSinceEpoch();
+
+    QSqlQuery query;
+    QString sql = "SELECT c.name, SUM(r.amount) FROM record r "
+                  "JOIN category c ON r.cid = c.id "
+                  "WHERE r.timestamp >= ? AND r.timestamp <= ? "
+                  "GROUP BY c.name";
+    query.prepare(sql);
+    query.addBindValue(startSec);
+    query.addBindValue(endSec);
+
+    if(query.exec()) {
+        while(query.next()) {
+            QString name = query.value(0).toString();
+            double value = query.value(1).toDouble();
+            pieSeries->append(name, value);
+        }
+    }
+
+    // 设置饼图标签可见
+    for(auto slice : pieSeries->slices()) {
+        slice->setLabelVisible(true);
+    }
+    pieChart->addSeries(pieSeries);
+
+
+    // 更新柱状图 (按收支类型汇总)
+    barChart->removeAllSeries();
+    // 清除旧坐标轴
+    QList<QAbstractAxis*> axes = barChart->axes();
+    for(auto axis : axes) barChart->removeAxis(axis);
+
+    QBarSeries *barSeries = new QBarSeries();
+    QBarSet *setIncome = new QBarSet("收入");
+    QBarSet *setExpense = new QBarSet("支出");
+
+    // 查询总收入和总支出
+    double totalIncome = 0;
+    double totalExpense = 0;
+
+    // 查收入
+    query.prepare("SELECT SUM(r.amount) FROM record r JOIN category c ON r.cid = c.id "
+                  "WHERE c.type = 1 AND r.timestamp >= ? AND r.timestamp <= ?");
+    query.addBindValue(startSec);
+    query.addBindValue(endSec);
+    if(query.exec() && query.next()) totalIncome = query.value(0).toDouble();
+
+    // 查支出
+    query.prepare("SELECT SUM(r.amount) FROM record r JOIN category c ON r.cid = c.id "
+                  "WHERE c.type = 0 AND r.timestamp >= ? AND r.timestamp <= ?");
+    query.addBindValue(startSec);
+    query.addBindValue(endSec);
+    if(query.exec() && query.next()) totalExpense = query.value(0).toDouble();
+
+    *setIncome << totalIncome;
+    *setExpense << totalExpense;
+
+    setIncome->setColor(Qt::green);
+    setExpense->setColor(Qt::red);
+
+    barSeries->append(setIncome);
+    barSeries->append(setExpense);
+    barChart->addSeries(barSeries);
+
+    // 创建坐标轴
+    QStringList categories; categories << "总计";
+    QBarCategoryAxis *axisX = new QBarCategoryAxis();
+    axisX->append(categories);
+    barChart->addAxis(axisX, Qt::AlignBottom);
+    barSeries->attachAxis(axisX);
+
+    QValueAxis *axisY = new QValueAxis();
+    barChart->addAxis(axisY, Qt::AlignLeft);
+    barSeries->attachAxis(axisY);
 }
 
 void MainWindow::loadFilterCategories(int type)
