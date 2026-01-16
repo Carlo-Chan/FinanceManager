@@ -334,6 +334,9 @@ void MainWindow::initModelView()
     // 设置外键关系
     model->setRelation(4, QSqlRelation("category", "id", "name"));
 
+    // 设置编辑策略为：字段值变化时立即提交
+    model->setEditStrategy(QSqlTableModel::OnFieldChange);
+
     // 加载数据
     model->select();
 
