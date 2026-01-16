@@ -48,6 +48,8 @@ MainWindow::MainWindow(QWidget *parent)
 
     // 初始刷新图表
     updateCharts();
+
+    updateSummary();
 }
 
 MainWindow::~MainWindow()
@@ -69,6 +71,7 @@ void MainWindow::on_actionAddRecord_triggered()
         if (success) {
             model->select(); // 刷新表格
             updateCharts();  // 刷新图表
+            updateSummary(); // 刷新概览
             QMessageBox::information(this, "成功", "账单添加成功！");
         } else {
             QMessageBox::warning(this, "失败", "添加失败，请检查数据库。");
@@ -154,6 +157,8 @@ void MainWindow::on_btn_Filter_clicked()
 
     // 刷新图表，让图表也反映筛选后的时间段
     updateCharts();
+
+    updateSummary();
 }
 
 
@@ -167,6 +172,8 @@ void MainWindow::on_btn_Reset_clicked()
     model->setFilter("");
     model->select();
     updateCharts();
+
+    updateSummary();
 }
 
 
@@ -187,6 +194,8 @@ void MainWindow::on_btn_Delete_clicked()
         model->submitAll(); // 提交到数据库
         model->select();
         updateCharts();
+
+        updateSummary();
     }
 }
 
@@ -319,6 +328,8 @@ void MainWindow::initModelView()
     // 当表格数据发生变化（用户编辑）时，重新画图
     connect(model, &QSqlTableModel::dataChanged, this, [this](){
         updateCharts();
+
+        updateSummary();
     });
 }
 
@@ -480,6 +491,52 @@ void MainWindow::loadFilterCategories(int type)
     }
 }
 
+void MainWindow::updateSummary()
+{
+    // 获取当前筛选的时间范围
+    qint64 startSec = QDateTime(ui->dateEdit_Start->date(), QTime(0,0)).toSecsSinceEpoch();
+    qint64 endSec = QDateTime(ui->dateEdit_End->date(), QTime(23,59,59)).toSecsSinceEpoch();
+
+    QSqlQuery query;
+    double totalIncome = 0.0;
+    double totalExpense = 0.0;
+
+    // 计算总收入 (type = 1)
+    // 这里演示“基于当前时间范围”的统计：
+    query.prepare("SELECT SUM(r.amount) FROM record r "
+                  "JOIN category c ON r.cid = c.id "
+                  "WHERE c.type = 1 AND r.timestamp >= ? AND r.timestamp <= ?");
+    query.addBindValue(startSec);
+    query.addBindValue(endSec);
+    if (query.exec() && query.next()) {
+        totalIncome = query.value(0).toDouble();
+    }
+
+    // 计算总支出 (type = 0)
+    query.prepare("SELECT SUM(r.amount) FROM record r "
+                  "JOIN category c ON r.cid = c.id "
+                  "WHERE c.type = 0 AND r.timestamp >= ? AND r.timestamp <= ?");
+    query.addBindValue(startSec);
+    query.addBindValue(endSec);
+    if (query.exec() && query.next()) {
+        totalExpense = query.value(0).toDouble();
+    }
+
+    // 更新 UI
+    ui->lbl_TotalIncome->setText(QString::number(totalIncome, 'f', 2));
+    ui->lbl_TotalExpense->setText(QString::number(totalExpense, 'f', 2));
+
+    double balance = totalIncome - totalExpense;
+    ui->lbl_TotalBalance->setText(QString::number(balance, 'f', 2));
+
+    // 结余颜色：正数黑色，负数红色
+    if (balance >= 0) {
+        ui->lbl_TotalBalance->setStyleSheet("color: black; font-weight: bold; font-size: 14px;");
+    } else {
+        ui->lbl_TotalBalance->setStyleSheet("color: red; font-weight: bold; font-size: 14px;");
+    }
+}
+
 
 void MainWindow::on_actionManageCategory_triggered()
 {
@@ -494,5 +551,7 @@ void MainWindow::on_actionManageCategory_triggered()
     // 刷新表格（如果用户删除了分类，表格里的记录会变化）
     model->select();
     updateCharts();
+
+    updateSummary();
 }
 

@@ -54,5 +54,7 @@ private:
 
     // 辅助函数：加载主界面的筛选分类
     void loadFilterCategories(int type); // type: 0支出, 1收入, -1全部
+
+    void updateSummary();
 };
 #endif // MAINWINDOW_H

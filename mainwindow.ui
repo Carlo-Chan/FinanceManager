@@ -220,6 +220,66 @@
         </spacer>
        </item>
        <item>
+        <widget class="QGroupBox" name="groupBox_Summary">
+         <property name="title">
+          <string>收支概览</string>
+         </property>
+         <layout class="QFormLayout" name="formLayout_Summary">
+          <item row="0" column="0">
+           <widget class="QLabel" name="label_7">
+            <property name="text">
+             <string>总收入:</string>
+            </property>
+           </widget>
+          </item>
+          <item row="0" column="1">
+           <widget class="QLabel" name="lbl_TotalIncome">
+            <property name="text">
+             <string>0.00</string>
+            </property>
+            <property name="styleSheet">
+             <string notr="true">color: green; font-weight: bold;</string>
+            </property>
+           </widget>
+          </item>
+          <item row="1" column="0">
+           <widget class="QLabel" name="label_9">
+            <property name="text">
+             <string>总支出:</string>
+            </property>
+           </widget>
+          </item>
+          <item row="1" column="1">
+           <widget class="QLabel" name="lbl_TotalExpense">
+            <property name="text">
+             <string>0.00</string>
+            </property>
+            <property name="styleSheet">
+             <string notr="true">color: red; font-weight: bold;</string>
+            </property>
+           </widget>
+          </item>
+          <item row="2" column="0">
+           <widget class="QLabel" name="label_11">
+            <property name="text">
+             <string>结余:</string>
+            </property>
+           </widget>
+          </item>
+          <item row="2" column="1">
+           <widget class="QLabel" name="lbl_TotalBalance">
+            <property name="text">
+             <string>0.00</string>
+            </property>
+            <property name="styleSheet">
+             <string notr="true">font-weight: bold; font-size: 14px;</string>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </widget>
+       </item>
+       <item>
         <widget class="QPushButton" name="btn_Delete">
          <property name="styleSheet">
           <string notr="true">color: rgb(170, 0, 0);</string>
