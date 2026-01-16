@@ -14,6 +14,119 @@
 #include <QHeaderView>
 #include <QDateTimeEdit>
 
+// 时间戳转换代理 (TimeDelegate)
+// 作用：将数据库里的 Unix 时间戳 (秒) 转换为 "yyyy-MM-dd HH:mm" 格式显示，也负责在编辑时提供“日期时间控件”
+class TimeDelegate : public QStyledItemDelegate {
+public:
+    explicit TimeDelegate(QObject *parent = nullptr) : QStyledItemDelegate(parent) {}
+
+    // 负责将秒数渲染成可读字符串
+    QString displayText(const QVariant &value, const QLocale &locale) const override {
+        bool ok = false;
+        qint64 timestamp = value.toLongLong(&ok);
+
+        // 如果转换成功(ok为true) 且 数值大于0 (有效时间戳)
+        if (ok && timestamp > 0) {
+            return QDateTime::fromSecsSinceEpoch(timestamp).toString("yyyy-MM-dd HH:mm");
+        }
+
+        return QStyledItemDelegate::displayText(value, locale);
+    }
+
+    // 当用户双击时，创建一个 QDateTimeEdit
+    QWidget *createEditor(QWidget *parent, const QStyleOptionViewItem &option,
+                          const QModelIndex &index) const override
+    {
+        Q_UNUSED(option);
+        Q_UNUSED(index);
+
+        QDateTimeEdit *editor = new QDateTimeEdit(parent);
+        editor->setDisplayFormat("yyyy-MM-dd HH:mm"); // 设定编辑时的显示格式
+        editor->setCalendarPopup(true); // 开启日历弹窗
+        return editor;
+    }
+
+    // 把模型里的秒数取出来，设置给编辑器
+    void setEditorData(QWidget *editor, const QModelIndex &index) const override
+    {
+        qint64 timestamp = index.model()->data(index, Qt::EditRole).toLongLong();
+        QDateTime dt = QDateTime::fromSecsSinceEpoch(timestamp);
+
+        QDateTimeEdit *dateEditor = static_cast<QDateTimeEdit*>(editor);
+        dateEditor->setDateTime(dt);
+    }
+
+    // 用户修完后，把编辑器的时间转回秒数，存回模型
+    void setModelData(QWidget *editor, QAbstractItemModel *model,
+                      const QModelIndex &index) const override
+    {
+        QDateTimeEdit *dateEditor = static_cast<QDateTimeEdit*>(editor);
+        QDateTime dt = dateEditor->dateTime();
+
+        // 转回 Unix 时间戳 (秒)
+        model->setData(index, dt.toSecsSinceEpoch(), Qt::EditRole);
+    }
+
+    // 保证编辑器大小合适
+    void updateEditorGeometry(QWidget *editor, const QStyleOptionViewItem &option,
+                              const QModelIndex &index) const override
+    {
+        Q_UNUSED(index);
+        editor->setGeometry(option.rect);
+    }
+};
+
+// 定义金额代理 (AmountDelegate)
+// 作用：格式化金额显示 (+/- 前缀)，并根据收支类型设置颜色 (红/绿)
+class AmountDelegate : public QStyledItemDelegate {
+public:
+    explicit AmountDelegate(QObject *parent = nullptr) : QStyledItemDelegate(parent) {}
+
+    // 格式化文本
+    QString displayText(const QVariant &value, const QLocale &locale) const override {
+        return QString::number(value.toDouble(), 'f', 2);
+    }
+
+    // 设置样式（颜色、正负号）
+    void initStyleOption(QStyleOptionViewItem *option, const QModelIndex &index) const override {
+        QStyledItemDelegate::initStyleOption(option, index);
+
+        // 获取当前行的分类名称 (第4列)
+        // 使用 DisplayRole 确保获取到的是界面上看到的中文名 (如 "工资", "餐饮")
+        QString categoryName = index.sibling(index.row(), 4).data(Qt::DisplayRole).toString();
+
+        // 查询类型 (0:支出, 1:收入)
+        // 使用静态缓存，防止频繁查库导致卡顿
+        static QMap<QString, int> typeCache;
+
+        if (!typeCache.contains(categoryName)) {
+            // 如果缓存里没有，去数据库查一次
+            QSqlQuery query;
+            query.prepare("SELECT type FROM category WHERE name = ?");
+            query.addBindValue(categoryName);
+            if (query.exec() && query.next()) {
+                typeCache.insert(categoryName, query.value(0).toInt());
+            } else {
+                // 查不到就默认支出(0)，防止崩溃
+                typeCache.insert(categoryName, 0);
+            }
+        }
+
+        int type = typeCache.value(categoryName);
+
+        // 根据类型设置颜色和前缀
+        if (type == 1) {
+            // 收入 (绿色)
+            option->palette.setColor(QPalette::Text, QColor(34, 139, 34)); // ForestGreen
+            option->text = "+ " + option->text;
+        } else {
+            // 支出 (红色)
+            option->palette.setColor(QPalette::Text, QColor(220, 20, 60)); // Crimson
+            option->text = "- " + option->text;
+        }
+    }
+};
+
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
     , ui(new Ui::MainWindow)
@@ -205,68 +318,6 @@ void MainWindow::on_filterTypeChanged(int index)
     loadFilterCategories(type); // 重新加载分类
 }
 
-// 时间戳转换代理 (TimeDelegate)
-// 作用：将数据库里的 Unix 时间戳 (秒) 转换为 "yyyy-MM-dd HH:mm" 格式显示，也负责在编辑时提供“日期时间控件”
-class TimeDelegate : public QStyledItemDelegate {
-public:
-    explicit TimeDelegate(QObject *parent = nullptr) : QStyledItemDelegate(parent) {}
-
-    // 负责将秒数渲染成可读字符串
-    QString displayText(const QVariant &value, const QLocale &locale) const override {
-        bool ok = false;
-        qint64 timestamp = value.toLongLong(&ok);
-
-        // 如果转换成功(ok为true) 且 数值大于0 (有效时间戳)
-        if (ok && timestamp > 0) {
-            return QDateTime::fromSecsSinceEpoch(timestamp).toString("yyyy-MM-dd HH:mm");
-        }
-
-        return QStyledItemDelegate::displayText(value, locale);
-    }
-
-    // 当用户双击时，创建一个 QDateTimeEdit
-    QWidget *createEditor(QWidget *parent, const QStyleOptionViewItem &option,
-                          const QModelIndex &index) const override
-    {
-        Q_UNUSED(option);
-        Q_UNUSED(index);
-
-        QDateTimeEdit *editor = new QDateTimeEdit(parent);
-        editor->setDisplayFormat("yyyy-MM-dd HH:mm"); // 设定编辑时的显示格式
-        editor->setCalendarPopup(true); // 开启日历弹窗
-        return editor;
-    }
-
-    // 把模型里的秒数取出来，设置给编辑器
-    void setEditorData(QWidget *editor, const QModelIndex &index) const override
-    {
-        qint64 timestamp = index.model()->data(index, Qt::EditRole).toLongLong();
-        QDateTime dt = QDateTime::fromSecsSinceEpoch(timestamp);
-
-        QDateTimeEdit *dateEditor = static_cast<QDateTimeEdit*>(editor);
-        dateEditor->setDateTime(dt);
-    }
-
-    // 用户修完后，把编辑器的时间转回秒数，存回模型
-    void setModelData(QWidget *editor, QAbstractItemModel *model,
-                      const QModelIndex &index) const override
-    {
-        QDateTimeEdit *dateEditor = static_cast<QDateTimeEdit*>(editor);
-        QDateTime dt = dateEditor->dateTime();
-
-        // 转回 Unix 时间戳 (秒)
-        model->setData(index, dt.toSecsSinceEpoch(), Qt::EditRole);
-    }
-
-    // 保证编辑器大小合适
-    void updateEditorGeometry(QWidget *editor, const QStyleOptionViewItem &option,
-                              const QModelIndex &index) const override
-    {
-        Q_UNUSED(index);
-        editor->setGeometry(option.rect);
-    }
-};
-
 void MainWindow::initModelView()
 {
     // 初始化模型
@@ -296,6 +347,7 @@ void MainWindow::initModelView()
     header->moveSection(4, 1);
 
     // 应用代理 (Delegate)
+    ui->tableView->setItemDelegateForColumn(1, new AmountDelegate(ui->tableView));
     ui->tableView->setItemDelegateForColumn(2, new TimeDelegate(ui->tableView));
     ui->tableView->setItemDelegateForColumn(4, new QSqlRelationalDelegate(ui->tableView));
 
