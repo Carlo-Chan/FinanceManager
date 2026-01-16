@@ -20,6 +20,27 @@ DatabaseManager::~DatabaseManager()
     }
 }
 
+int DatabaseManager::getUncategorizedId(int type)
+{
+    QSqlQuery query;
+    // 先查找是否存在名为“未分类”且类型匹配的记录
+    query.prepare("SELECT id FROM category WHERE name = '未分类' AND type = :type");
+    query.bindValue(":type", type);
+
+    if (query.exec() && query.next()) {
+        return query.value(0).toInt();
+    }
+
+    // 如果不存在，则创建一个
+    query.prepare("INSERT INTO category (name, type) VALUES ('未分类', :type)");
+    query.bindValue(":type", type);
+    if (query.exec()) {
+        return query.lastInsertId().toInt(); // 返回新生成的ID
+    }
+
+    return -1; // 出错
+}
+
 bool DatabaseManager::openDatabase(const QString& path)
 {
     m_db = QSqlDatabase::addDatabase("QSQLITE");
@@ -113,4 +134,75 @@ QSqlQuery DatabaseManager::getCategories(int type)
     }
     query.exec();
     return query;
+}
+
+bool DatabaseManager::addCategory(const QString &name, int type)
+{
+    if (isCategoryNameExist(name, type)) return false; // 防止重复
+
+    QSqlQuery query;
+    query.prepare("INSERT INTO category (name, type) VALUES (:name, :type)");
+    query.bindValue(":name", name);
+    query.bindValue(":type", type);
+    return query.exec();
+}
+
+bool DatabaseManager::removeCategory(int id, int type, bool keepRecords)
+{
+    m_db.transaction(); // 开启事务，保证原子性
+
+    // 如果选择保留记录
+    if (keepRecords) {
+        int targetId = getUncategorizedId(type);
+        if (targetId == -1) {
+            m_db.rollback();
+            return false;
+        }
+
+        // 防止用户试图删除“未分类”本身导致逻辑死循环
+        if (targetId == id) {
+            // 如果用户就是在删“未分类”，那就不能保留了，只能拒绝或清空
+            // 这里简单处理：直接返回失败，不允许删除“未分类”
+            m_db.rollback();
+            return false;
+        }
+
+        // 执行转移：把原分类下的账单移动到“未分类”
+        QSqlQuery updateQuery;
+        updateQuery.prepare("UPDATE record SET cid = :newId WHERE cid = :oldId");
+        updateQuery.bindValue(":newId", targetId);
+        updateQuery.bindValue(":oldId", id);
+
+        if (!updateQuery.exec()) {
+            m_db.rollback();
+            return false;
+        }
+    }
+
+    // 删除分类
+    // (如果keepRecords为真，此时该分类下已经没有账单了，删除安全)
+    // (如果keepRecords为假，Cascade机制会自动删除关联账单)
+    QSqlQuery deleteQuery;
+    deleteQuery.prepare("DELETE FROM category WHERE id = :id");
+    deleteQuery.bindValue(":id", id);
+
+    if (deleteQuery.exec()) {
+        m_db.commit(); // 提交事务
+        return true;
+    } else {
+        m_db.rollback(); // 回滚
+        return false;
+    }
+}
+
+bool DatabaseManager::isCategoryNameExist(const QString &name, int type)
+{
+    QSqlQuery query;
+    query.prepare("SELECT count(*) FROM category WHERE name = :name AND type = :type");
+    query.bindValue(":name", name);
+    query.bindValue(":type", type);
+    if (query.exec() && query.next()) {
+        return query.value(0).toInt() > 0;
+    }
+    return false;
 }

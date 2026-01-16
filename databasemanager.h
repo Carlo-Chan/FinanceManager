@@ -24,12 +24,19 @@ public:
     bool insertRecord(double amount, const QDateTime& datetime, const QString& note, int cid);
     QSqlQuery getCategories(int type); // 获取分类列表
 
+    bool addCategory(const QString& name, int type);
+    bool removeCategory(int id, int type, bool keepRecords);
+    bool isCategoryNameExist(const QString& name, int type); // 防止同名
+
 private:
     // 构造函数私有化，禁止外部 new
     DatabaseManager();
     ~DatabaseManager();
 
     QSqlDatabase m_db;
+
+    // 辅助：获取（或创建）“未分类”的ID
+    int getUncategorizedId(int type);
 };
 
 #endif // DATABASEMANAGER_H
