@@ -13,6 +13,8 @@
 #include <QDateTime>
 #include <QHeaderView>
 #include <QDateTimeEdit>
+#include <QCoreApplication>
+#include <QDir>
 
 // 时间戳转换代理 (TimeDelegate)
 // 作用：将数据库里的 Unix 时间戳 (秒) 转换为 "yyyy-MM-dd HH:mm" 格式显示，也负责在编辑时提供“日期时间控件”
@@ -133,9 +135,14 @@ MainWindow::MainWindow(QWidget *parent)
 {
     ui->setupUi(this);
 
+    // 获取当前 exe 运行目录
+    QString runPath = QCoreApplication::applicationDirPath();
+    // 拼接数据库文件名
+    QString dbPath = runPath + "/finance.db";
+
     // 连接数据库
-    if (!DatabaseManager::instance().openDatabase("F:/Users/22783/Documents/Qt/FinanceManager/finance.db")) {
-        QMessageBox::critical(this, "错误", "无法连接数据库！");
+    if (!DatabaseManager::instance().openDatabase(dbPath)) {
+        QMessageBox::critical(this, "错误", "无法连接数据库！\n路径: " + dbPath);
     }
 
     // 初始化各个模块
