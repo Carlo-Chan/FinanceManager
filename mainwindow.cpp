@@ -284,15 +284,28 @@ void MainWindow::on_btn_Filter_clicked()
 
 void MainWindow::on_btn_Reset_clicked()
 {
+    // 重置日期
     ui->dateEdit_Start->setDate(QDate::currentDate().addMonths(-1));
     ui->dateEdit_End->setDate(QDate::currentDate());
-    ui->comboBox_FilterType->setCurrentIndex(0); // 全部
+
+    // 重置搜索框
     ui->lineEdit_Search->clear();
 
+    // 重置收支类型
+    ui->comboBox_FilterType->setCurrentIndex(0); // 设为"全部"
+
+    // 强制重置分类下拉框
+    // 无论上面的类型是否发生改变，这里都强制将分类指回第0项("全部")
+    if (ui->comboBox_FilterCategory->count() > 0) {
+        ui->comboBox_FilterCategory->setCurrentIndex(0);
+    }
+
+    // 重置数据模型（清除 SQL 筛选）
     model->setFilter("");
     model->select();
-    updateCharts();
 
+    // 刷新图表和概览
+    updateCharts();
     updateSummary();
 }
 
@@ -414,29 +427,26 @@ void MainWindow::initCharts()
 
 void MainWindow::updateCharts()
 {
+    // 获取通用的筛选条件
+    QString filterSql = getFilterSql();
+
     // 更新饼图 (按分类汇总金额)
     pieChart->removeAllSeries();
     QPieSeries *pieSeries = new QPieSeries();
 
-    // 查询：根据当前日期范围汇总 (可复用筛选的时间)
-    qint64 startSec = QDateTime(ui->dateEdit_Start->date(), QTime(0,0)).toSecsSinceEpoch();
-    qint64 endSec = QDateTime(ui->dateEdit_End->date(), QTime(23,59,59)).toSecsSinceEpoch();
-
     QSqlQuery query;
-    QString sql = "SELECT c.name, SUM(r.amount) FROM record r "
-                  "JOIN category c ON r.cid = c.id "
-                  "WHERE r.timestamp >= ? AND r.timestamp <= ? "
-                  "GROUP BY c.name "
-                  "ORDER BY SUM(r.amount) DESC";
-    query.prepare(sql);
-    query.addBindValue(startSec);
-    query.addBindValue(endSec);
+    // 构建查询语句
+    QString pieSql = "SELECT c.name, SUM(r.amount) FROM record r "
+                     "JOIN category c ON r.cid = c.id "
+                     "WHERE 1=1 " + filterSql +
+                     " GROUP BY c.name "
+                     "ORDER BY SUM(r.amount) DESC";
 
-    if(query.exec()) {
+    if(query.exec(pieSql)) {
         while(query.next()) {
             QString name = query.value(0).toString();
             double value = query.value(1).toDouble();
-            if(value > 0) { // 只添加金额大于0的
+            if(value > 0) {
                 pieSeries->append(name, value);
             }
         }
@@ -495,19 +505,17 @@ void MainWindow::updateCharts()
     double totalIncome = 0;
     double totalExpense = 0;
 
-    // 查收入
-    query.prepare("SELECT SUM(r.amount) FROM record r JOIN category c ON r.cid = c.id "
-                  "WHERE c.type = 1 AND r.timestamp >= ? AND r.timestamp <= ?");
-    query.addBindValue(startSec);
-    query.addBindValue(endSec);
-    if(query.exec() && query.next()) totalIncome = query.value(0).toDouble();
+    // 查经过筛选后的总收入
+    // 逻辑：基础筛选条件 + (类型必须是收入)
+    QString incomeSql = "SELECT SUM(r.amount) FROM record r JOIN category c ON r.cid = c.id "
+                        "WHERE c.type = 1 " + filterSql;
+    if(query.exec(incomeSql) && query.next()) totalIncome = query.value(0).toDouble();
 
-    // 查支出
-    query.prepare("SELECT SUM(r.amount) FROM record r JOIN category c ON r.cid = c.id "
-                  "WHERE c.type = 0 AND r.timestamp >= ? AND r.timestamp <= ?");
-    query.addBindValue(startSec);
-    query.addBindValue(endSec);
-    if(query.exec() && query.next()) totalExpense = query.value(0).toDouble();
+    // 查经过筛选后的总支出
+    // 逻辑：基础筛选条件 + (类型必须是支出)
+    QString expenseSql = "SELECT SUM(r.amount) FROM record r JOIN category c ON r.cid = c.id "
+                         "WHERE c.type = 0 " + filterSql;
+    if(query.exec(expenseSql) && query.next()) totalExpense = query.value(0).toDouble();
 
     *setIncome << totalIncome;
     *setExpense << totalExpense;
@@ -535,7 +543,7 @@ void MainWindow::updateCharts()
     barChart->addAxis(axisY, Qt::AlignLeft);
     // 让Y轴稍微高一点，避免柱子顶到头
     double maxVal = qMax(totalIncome, totalExpense);
-    axisY->setRange(0, maxVal * 1.2);
+    axisY->setRange(0, maxVal == 0 ? 100 : maxVal * 1.2);
     // 设置Y轴标签格式 (不显示小数)
     axisY->setLabelFormat("%.0f");
 
@@ -555,32 +563,28 @@ void MainWindow::loadFilterCategories(int type)
 
 void MainWindow::updateSummary()
 {
-    // 获取当前筛选的时间范围
-    qint64 startSec = QDateTime(ui->dateEdit_Start->date(), QTime(0,0)).toSecsSinceEpoch();
-    qint64 endSec = QDateTime(ui->dateEdit_End->date(), QTime(23,59,59)).toSecsSinceEpoch();
+    // 获取通用的筛选条件
+    QString filterSql = getFilterSql();
 
     QSqlQuery query;
     double totalIncome = 0.0;
     double totalExpense = 0.0;
 
-    // 计算总收入 (type = 1)
-    // 这里演示“基于当前时间范围”的统计：
-    query.prepare("SELECT SUM(r.amount) FROM record r "
-                  "JOIN category c ON r.cid = c.id "
-                  "WHERE c.type = 1 AND r.timestamp >= ? AND r.timestamp <= ?");
-    query.addBindValue(startSec);
-    query.addBindValue(endSec);
-    if (query.exec() && query.next()) {
+    // 计算总收入
+    // 叠加条件：c.type = 1 (收入)
+    QString incomeSql = "SELECT SUM(r.amount) FROM record r JOIN category c ON r.cid = c.id "
+                        "WHERE c.type = 1 " + filterSql;
+
+    if (query.exec(incomeSql) && query.next()) {
         totalIncome = query.value(0).toDouble();
     }
 
-    // 计算总支出 (type = 0)
-    query.prepare("SELECT SUM(r.amount) FROM record r "
-                  "JOIN category c ON r.cid = c.id "
-                  "WHERE c.type = 0 AND r.timestamp >= ? AND r.timestamp <= ?");
-    query.addBindValue(startSec);
-    query.addBindValue(endSec);
-    if (query.exec() && query.next()) {
+    // 计算总支出
+    // 叠加条件：c.type = 0 (支出)
+    QString expenseSql = "SELECT SUM(r.amount) FROM record r JOIN category c ON r.cid = c.id "
+                         "WHERE c.type = 0 " + filterSql;
+
+    if (query.exec(expenseSql) && query.next()) {
         totalExpense = query.value(0).toDouble();
     }
 
@@ -597,6 +601,37 @@ void MainWindow::updateSummary()
     } else {
         ui->lbl_TotalBalance->setStyleSheet("color: red; font-weight: bold; font-size: 14px;");
     }
+}
+
+QString MainWindow::getFilterSql()
+{
+    QString sql = "";
+
+    // 日期筛选
+    qint64 startSec = QDateTime(ui->dateEdit_Start->date(), QTime(0,0)).toSecsSinceEpoch();
+    qint64 endSec = QDateTime(ui->dateEdit_End->date(), QTime(23,59,59)).toSecsSinceEpoch();
+    sql += QString(" AND r.timestamp >= %1 AND r.timestamp <= %2").arg(startSec).arg(endSec);
+
+    // 类型筛选 (全部 / 支出 / 收入)
+    int type = ui->comboBox_FilterType->currentData().toInt();
+    if (type != -1) {
+        // 注意：这里使用了 c.type，因为在查询时会 JOIN category c
+        sql += QString(" AND c.type = %1").arg(type);
+    }
+
+    // 分类筛选 (具体分类 ID)
+    int categoryId = ui->comboBox_FilterCategory->currentData().toInt();
+    if (categoryId != -1) {
+        sql += QString(" AND r.cid = %1").arg(categoryId);
+    }
+
+    // 备注搜索 (模糊查询)
+    QString text = ui->lineEdit_Search->text().trimmed();
+    if (!text.isEmpty()) {
+        sql += QString(" AND r.note LIKE '%%1%'").arg(text);
+    }
+
+    return sql;
 }
 
 

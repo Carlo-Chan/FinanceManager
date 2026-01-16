@@ -56,5 +56,8 @@ private:
     void loadFilterCategories(int type); // type: 0支出, 1收入, -1全部
 
     void updateSummary();
+
+    // 辅助函数，用于生成通用的 SQL WHERE 子句
+    QString getFilterSql();
 };
 #endif // MAINWINDOW_H
